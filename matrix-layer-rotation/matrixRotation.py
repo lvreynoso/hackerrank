@@ -20,38 +20,52 @@ def matrixRotation(matrix, r):
     rows = len(matrix)
     columns = len(matrix[0])
 
-    orbits = []
+    rings = []
 
     numberOfRings = math.floor(min(rows, columns) / 2)
 
+    # this time we do a mapping
+
+    # first sort the matrix locations a[i][j] into "orbits", so to speak
+    # starting with the outside "ring" of the matrix, and going inward
+    # top left is first position in the ring
     for ringNumber in range(1, numberOfRings + 1):
-        orbit = []
+        ring = []
         leftColumn = [] # these are last
         firstRowIndex = 0 + (ringNumber - 1)
         lastRowIndex = (rows - 1) - (ringNumber - 1)
         leftColumnIndex = 0 + (ringNumber - 1)
         rightColumnIndex = (columns - 1) - (ringNumber - 1)
         for row in range(firstRowIndex, lastRowIndex + 1):
-            # if it's the first row, add that row to the orbit, minus the ring level
+            # if it's the first row, add that row to the ring, minus the ring level
             if row == firstRowIndex:
-                orbit.extend(matrix[row][leftColumnIndex:rightColumnIndex + 1])
-            # if it's the last row, add that row (reversed) to the orbit, minus the ring level
+                for column in range(columns):
+                    if column >= leftColumnIndex and column <= rightColumnIndex:
+                       ring.append([row, column])
+            # if it's the last row, add that row (reversed) to the ring, minus the ring level
             elif row == lastRowIndex:
-                values = matrix[row][leftColumnIndex:rightColumnIndex + 1]
-                values.reverse()
-                orbit.extend(values)
+                lastRow = []
+                for column in range(columns):
+                    if column >= leftColumnIndex and column <= rightColumnIndex:
+                        lastRow.append([row, column])
+                lastRow.reverse()
+                ring.extend(lastRow)
             else:
-                leftColumn.append(matrix[row][leftColumnIndex])
-                orbit.append(matrix[row][rightColumnIndex])
+                leftColumn.append([row, leftColumnIndex])
+                ring.append([row, rightColumnIndex])
         leftColumn.reverse()
-        orbit.extend(leftColumn)
-        orbits.append(orbit)
+        ring.extend(leftColumn)
+        rings.append(ring)
 
-    for orbit in orbits:
-        shiftedValues = orbit[0:r]
-        del orbit[0:r]
-        orbit.extend(shiftedValues)
+    # now for each list of coordinates, we add a second pair that corresponds to the point
+    # in the matrix that is r rotations down the line
 
+    for ring in rings:
+        for index in range(len(ring)):
+            mappingPoint = (index - r) % (len(ring))
+            ring[index].extend(ring[mappingPoint])
+
+    # create an empty output matrix of the same size
     outputMatrix = []
     for row in range(rows):
         row = []
@@ -59,21 +73,17 @@ def matrixRotation(matrix, r):
             row.append(0)
         outputMatrix.append(row)
 
-    for ringNumber in range(1, numberOfRings + 1):
-        firstRowIndex = 0 + (ringNumber - 1)
-        lastRowIndex = (rows - 1) - (ringNumber - 1)
-        leftColumnIndex = 0 + (ringNumber - 1)
-        rightColumnIndex = (columns - 1) - (ringNumber - 1)
-        for row in range(firstRowIndex, lastRowIndex + 1):
-            if row == firstRowIndex:
-                for column in range(leftColumnIndex, rightColumnIndex + 1):
-                    outputMatrix[row][column] = orbits[ringNumber - 1].pop(0)
-            elif row == lastRowIndex:
-                for column in range(leftColumnIndex, rightColumnIndex + 1):
-                    outputMatrix[row][column] = orbits[ringNumber - 1].pop()
-            else:
-                outputMatrix[row][rightColumnIndex] = orbits[ringNumber - 1].pop(0)
-                outputMatrix[row][leftColumnIndex] = orbits[ringNumber - 1].pop()
+    # now we just read our rings as a neat little mapping to where
+    # the original points go in the final matrix
+    for ring in rings:
+        for entry in ring:
+            # map original a[i][j] to new m[x][y]
+            # variable assignments for readability
+            i = entry[0]
+            j = entry[1]
+            x = entry[2]
+            y = entry[3]
+            outputMatrix[x][y] = matrix[i][j]
 
     print('\n\nOutput Matrix:\n')
     for row in outputMatrix:
@@ -81,9 +91,6 @@ def matrixRotation(matrix, r):
         for number in row:
             outputString += str(number) + ' '
         print(outputString + '\n')
-
-
-
 
 
 
